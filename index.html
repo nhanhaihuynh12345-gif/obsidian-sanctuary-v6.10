@@ -299,6 +299,7 @@
     </main>
 
     <script>
+        // URL Cloudflare Worker proxy trung gian để giấu API key phía máy chủ và gọi mô hình AI
         const API_PROXY_URL = "https://api-code.nhanhaihuynh12345.workers.dev";
         const GROQ_MODEL_CANDIDATES = [
             "llama-3.3-70b-versatile",
@@ -310,8 +311,10 @@
             "gemini-3.8-flash-lite",
             "gemini-3.5-flash"
         ];
-        const STORAGE_KEY = "obsidian_sanctuary_v322_evidence_log";
+        // Khóa lưu nhật ký phiên cục bộ trên trình duyệt (localStorage), không lưu tên thật hay SĐT
+        const STORAGE_KEY = "obsidian_sanctuary_v323_evidence_log";
 
+        // Bảng tham chiếu Khung 7 Bước Hỗ Trợ (dùng cho Luồng 2, biểu đồ tham chiếu và xuất CSV)
         const STAGE_REFERENCE_DATA = [
             { stage: "Bước 1", name: "Nhận diện tổn thương & căng thẳng ban đầu", miRange: "80% - 100%", empRange: "0% - 15%", supRange: "0% - 10%", miMid: 90, empMid: 10, supMid: 4, goal: "Cung cấp không gian lắng nghe không phán xét; giúp học sinh gọi tên cảm xúc và mức độ căng thẳng ban đầu." },
             { stage: "Bước 2", name: "Nhận diện hành vi thao túng, nói xấu, cô lập & bắt nạt", miRange: "65% - 79%", empRange: "16% - 30%", supRange: "11% - 24%", miMid: 72, empMid: 25, supMid: 16, goal: "Phân tích hành vi cụ thể trong bối cảnh học đường; phân biệt góp ý xây dựng với tẩy chay hoặc ngụy biện 'đùa vui'." },
@@ -346,6 +349,7 @@
             `).join('');
         }
 
+        // Bật khung cảnh báo & điểm tựa hỗ trợ (chỉ hiển thị khi có quyết định cảnh báo từ AI hoặc người dùng chủ động mở)
         function toggleCrisisBanner(contextMessage) {
             const banner = document.getElementById('crisis-support-banner');
             const noteEl = document.getElementById('crisis-context-note');
@@ -358,11 +362,13 @@
             }
         }
 
+        // Kiểm tra quyết định bật cảnh báo đỏ (high_risk) hoàn toàn do AI đánh giá từ ngữ cảnh, không dùng từ khóa cứng
         function isContextualHighRisk(parsed, userText = "") {
             if (!parsed || typeof parsed !== "object") return false;
             return parsed.high_risk === true || String(parsed.high_risk).toLowerCase() === "true";
         }
 
+        // Chuẩn hóa và tính 3 chỉ số tham khảo (MI: áp lực/thao túng cảm nhận, Tự chủ, Hỗ trợ) theo khung tham chiếu
         function computeTransparentMetrics(text, parsed, forceHighRisk = false) {
             const stepMatch = (parsed.stage || "").match(/Bước\s*([1-7])/i);
             const stepNum = stepMatch ? parseInt(stepMatch[1], 10) : 2;
@@ -789,6 +795,7 @@
 
         const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+        // Gửi yêu cầu tới AI qua Worker proxy với cơ chế thử lại và dự phòng giữa các model Groq / Gemini
         async function queryWithAutoFallback(prompt) {
             let lastError = null;
 
@@ -903,6 +910,7 @@
             throw lastError || new Error("Kết nối tạm gián đoạn");
         }
 
+        // Xử lý gửi tin nhắn: tách 2 luồng (ưu tiên Luồng 1 tình huống tự hại; không thuộc Luồng 1 thì sang Luồng 2 khung 7 giai đoạn)
         async function sendMessage() {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
@@ -1153,7 +1161,7 @@ Trả về duy nhất JSON hợp lệ:
         function exportRawEvidenceJSON() {
             if (experimentLogs.length === 0) return alert("Chưa có dữ liệu phiên để xuất!");
             const payload = {
-                project: "OBSIDIAN SANCTUARY (v3.22 - Two Priority Flows)",
+                project: "OBSIDIAN SANCTUARY (v3.23 - Annotated Two Priority Flows)",
                 exportedAt: new Date().toISOString(),
                 totalRecords: experimentLogs.length,
                 records: experimentLogs
@@ -1167,6 +1175,7 @@ Trả về duy nhất JSON hợp lệ:
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
 
+        // Cập nhật biểu đồ tiến trình, thẻ chỉ số, bảng nhật ký và lưu dữ liệu phiên cục bộ
         function updateDashboard(label, stage, mi, emp, sup, text, meta = {}) {
             dynamicChart.data.labels.push(label);
             dynamicChart.data.datasets[0].data.push(mi);

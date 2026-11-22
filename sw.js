@@ -1,4 +1,4 @@
-const CACHE_NAME = 'obsidian-sanctuary-v3.22-two-flows';
+const CACHE_NAME = 'obsidian-sanctuary-v3.23-annotated';
 const ASSETS = [
   './',
   './index.html',
